@@ -1154,7 +1154,7 @@ gh workflow run push_docker --ref main
 # 查看刚触发的运行（拿到状态与运行链接）
 gh run list --workflow=push_docker --limit 1
 
-# 可选：盯着它跑到结束（多架构构建，正常约 3~4 分钟）
+# 可选：盯着它跑到结束（四个平台并行构建，正常约 3 分钟）
 gh run watch
 
 # 构建成功后接 step 6 创建 GitHub Release
@@ -1164,5 +1164,5 @@ gh release create vX.Y.Z --verify-tag --latest --title "vX.Y.Z · 一句话主�
 
 > - 工作流是 `workflow_dispatch`、无输入参数，固定从默认分支 `main` 构建；务必确认 `main` 已包含本次 release 提交（即 step 4 已 `git push`）。
 > - 镜像标签 `:latest / :X.Y.Z / :X.Y / :X` 写死在 `push_docker.yaml`、已随 `bump-version.js` 更新，无需在命令里指定。
-> - 构建失败多为 QEMU / 网络偶发，`gh workflow run push_docker --ref main` 重新触发一次即可。
+> - 每个平台单独一个任务、超过 10 分钟自动判失败，四个平台全部成功才会打标签（失败不会动线上镜像）。某个平台失败时用 `gh run rerun <运行ID> --failed`（或网页上「Re-run failed jobs」）只重跑失败的那个，打标签会跟着自动重跑。
 -->
