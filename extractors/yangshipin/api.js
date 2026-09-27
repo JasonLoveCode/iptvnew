@@ -144,13 +144,19 @@ async function fetchManifest(url, fetchImpl, signal) {
  * 而一次换票本就已经打了取票和清单两枪，再补一枪分片正好撞上限速——那样探活会在
  * CDN 完全正常时失败，把主备两条都误判成不可用，最终整个频道播不了。分片能否取到
  * 由播放器在真正播放时决定，它自己会重试，不需要这里替它预判。
+ *
+ * 每个入口最多等 MANIFEST_TIMEOUT_MS。官方入口偶尔会挂住不回应，原先等满 10 秒才换备用入口，
+ * 而播放器手里只有十几秒内容，这一等画面必停（libVLC 实测晚到 5～8 秒，主备都挂时等了 20 秒）。
+ * 正常取清单很快：经 NAS 实例统计 205 次，中位 0.15 秒、95% 在 0.7 秒内、最慢的正常响应不到 1 秒。
  */
+export const MANIFEST_TIMEOUT_MS = 3_000
+
 export async function selectWorkingManifest(urls, options = {}) {
   const fetchImpl = options.fetchImpl || fetch
   const errors = []
   let forbidden = 0
   for (const url of urls) {
-    const timeout = withTimeout(Number(options.timeoutMs || 10_000))
+    const timeout = withTimeout(Number(options.timeoutMs || MANIFEST_TIMEOUT_MS))
     try {
       let manifest = await fetchManifest(url, fetchImpl, timeout.signal)
       const variant = firstVariant(manifest.text, manifest.url)

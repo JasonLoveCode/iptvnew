@@ -321,7 +321,7 @@ function interfaceStr(url, headers, urlUserId, urlToken, profile, accessPrefix, 
  *
  * client 可选：{ key, tag }，来自 app.js 的 clientOf(req)。不传就不计不拦（测试、旧调用方）。
  */
-async function channel(url, urlUserId, urlToken, client) {
+async function channel(url, urlUserId, urlToken, client, request = {}) {
 
   let result = {
     code: 200,
@@ -369,8 +369,15 @@ async function channel(url, urlUserId, urlToken, client) {
   try {
     // ctx 带三样：账号（来自地址里的 /userId/token 段）、模块自己的生效配置
     // （画质等，effectiveConfig 是纯内存计算，不碰磁盘）、以及回看参数由外壳处理。
+    // 另带客户端身份和 selfBase（这位客户端访问本实例用的地址前缀，仅清单直出时有）：
+    // 模块要按播放器下发不同清单、或在清单里引用本机地址时用，用不上的模块不必理会。
     const config = getExtractorManager().effectiveConfig(module)
-    resolved = await module.resolve(pid, { account: { userId: urlUserId, token: urlToken }, config })
+    resolved = await module.resolve(pid, {
+      account: { userId: urlUserId, token: urlToken },
+      config,
+      client,
+      selfBase: request.selfBase || '',
+    })
   } catch (error) {
     // 模块契约要求 resolve 不抛。万一抛了也绝不能让异常冒出去——app.js 的
     // 请求 handler 没有顶层 try，未捕获异常等于请求永远不 end、客户端挂死。

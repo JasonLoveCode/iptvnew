@@ -1,4 +1,5 @@
 import { BROWSER_UA, LoginRequiredError, YSP_HOME } from './browser-auth.js'
+import { LIBVLC_UA } from './libvlc-view.js'
 
 const KEEP_SEGMENTS = 12
 // 页面空闲回收：播放器停止请求后多久关掉该频道的官网页面。原 45 秒，换台再切回来就得从头
@@ -22,7 +23,7 @@ const READY_TOP_UP_MS = 10_000
 // 清单开头起），中途加入时缓冲从 3 倍 TARGETDURATION 提到 25 秒左右。libVLC 对直播清单不认这个
 // 标签（只在清单有总时长时生效），它另走 libvlcPlaylist() 视图。
 const START_BEHIND_LIVE_S = 25
-// libVLC（Ceau Player、VLC 等）专用清单视图。用 Ceau Player 自带的 libVLC 4.0 复现并对照源码
+// 会员频道的 libVLC（Ceau Player、VLC 等）专用清单视图（公开频道的在 libvlc-view.js）。用 Ceau Player 自带的 libVLC 4.0 复现并对照源码
 // （modules/demux/adaptive）确认了两条规则：
 //   1. 直播清单里它正在读的分片一旦是最后一片，就停止解复用（SegmentTracker::bufferingAvailable），
 //      而解完一个单片段的 fMP4 又要先读到下一片——所以清单最后那一整片（5～9 秒）它永远用不上；
@@ -38,7 +39,6 @@ const START_BEHIND_LIVE_S = 25
 // 「15 秒」实际退到约 25 秒；冷起时在最早一片前垫两个占位项，让它跳过占位、从最早一片开始放。
 // 播放时它用分片里的真实时间戳，声明时长只影响选起播点和刷新判断；占位项它不会请求（请求了回 404）。
 // 其余每一秒延迟也省掉：半秒尾巴、1 秒刷新、1.5 秒催上游。
-const LIBVLC_UA = /(?:^|\s)(?:VLC|LibVLC)\//i
 const LIBVLC_TARGET_DURATION_S = 1
 const LIBVLC_TAIL_S = 0.5
 const LIBVLC_MIN_HEAD_S = 1.5
@@ -762,7 +762,7 @@ ${video}
     return `${lines.join('\n')}\n`
   }
 
-  /** libVLC 视图的媒体清单：主体 + 尾巴、1 秒刷新、时长少报、冷起垫占位（原因见 LIBVLC_UA 注释）。 */
+  /** libVLC 视图的媒体清单：主体 + 尾巴、1 秒刷新、时长少报、冷起垫占位（原因见文件开头「libVLC 专用清单视图」一段）。 */
   libvlcPlaylist(state, track, segments, base) {
     const items = segments.flatMap(segment => (segment.libvlcItems || []).map((item, index) => ({ segment, item, index })))
     const pads = items[0].item.sequence === LIBVLC_PAD_ITEMS ? LIBVLC_PAD_ITEMS : 0

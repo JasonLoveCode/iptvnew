@@ -13,6 +13,7 @@ import {
   YspBrowserLogin,
   YspBrowserSession,
 } from './browser-auth.js'
+import { FILLER_BODY, FILLER_PATH } from './libvlc-view.js'
 import { VipMseBridge } from './vip-bridge.js'
 
 const firstLine = error => String(error?.message || error || '未知错误').split('\n')[0]
@@ -234,7 +235,7 @@ function isTopLevelRef(path) {
 
 export function claimsLocalPath(path) {
   const value = String(path || '')
-  return value.startsWith('/ysp-vip/') || Boolean(isTopLevelRef(value))
+  return value === FILLER_PATH || value.startsWith('/ysp-vip/') || Boolean(isTopLevelRef(value))
 }
 
 function response(status, contentType, body = '', headers = {}) {
@@ -311,6 +312,10 @@ function traceVip(channel, client, describe) {
 /** 模块本地媒体路由；app.js 只负责鉴权、选择模块及写 HTTP 响应。 */
 export async function handleLocalRequest({ path, method = 'GET', headers = {}, accessPrefix = '', client } = {}) {
   const value = String(path || '')
+  // 公开频道 libVLC 清单里的垫片（见 libvlc-view.js）：固定的一段 TS 空包，与频道、账号无关
+  if (value === FILLER_PATH) {
+    return response(200, 'video/mp2t', method === 'GET' ? FILLER_BODY : '', { 'Cache-Control': 'public, max-age=86400' })
+  }
   const playlistMatch = value.match(/^\/ysp-vip\/([a-z0-9]+)\/(video|audio)\.m3u8$/i)
   const assetMatch = value.match(/^\/ysp-vip\/([a-z0-9]+)\/(video|audio)\/(init|v?\d+|vpad\d+)\.(?:mp4|m4s)$/i)
   const topRef = isTopLevelRef(value)

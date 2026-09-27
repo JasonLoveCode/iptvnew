@@ -10,8 +10,9 @@ import {
   buildChannels,
 } from '../extractors/yangshipin/channels.js'
 import { createCKey } from '../extractors/yangshipin/ckey.js'
-import { isOfficialMediaUrl, requestPlayUrls, selectWorkingManifest } from '../extractors/yangshipin/api.js'
+import { MANIFEST_TIMEOUT_MS, isOfficialMediaUrl, requestPlayUrls, selectWorkingManifest } from '../extractors/yangshipin/api.js'
 import { CACHE_MS, PIN_MARGIN, createResolver, pinSegmentUrls } from '../extractors/yangshipin/resolver.js'
+import { FILLER_BODY, FILLER_PATH, libvlcPlaylist } from '../extractors/yangshipin/libvlc-view.js'
 import {
   LOGIN_IDENTITY_COOKIES,
   YspBrowserLogin,
@@ -19,7 +20,7 @@ import {
   browserLoginAvailability,
   parseImportedLoginState,
 } from '../extractors/yangshipin/browser-auth.js'
-import { handleLocalRequest, runtime } from '../extractors/yangshipin/runtime.js'
+import { claimsLocalPath, handleLocalRequest, runtime } from '../extractors/yangshipin/runtime.js'
 import {
   buildFragmentPart,
   createTrackState,
@@ -679,6 +680,21 @@ await checkAsync('主 CDN 清单失败后切换备用 CDN，拍平成媒体清�
   assert.equal(calls.some(url => url.endsWith('/part.ts')), false, '选 CDN 阶段不得试拉分片')
 })
 
+await checkAsync('入口挂住不回应时 3 秒就换备用入口，不让播放器干等', async () => {
+  assert.equal(MANIFEST_TIMEOUT_MS, 3000)
+  const fetchImpl = (url, { signal } = {}) => String(url).includes('hang.ysp')
+    ? new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))))
+    : Promise.resolve(new Response('#EXTM3U\n#EXTINF:5,\npart.ts\n', { status: 200 }))
+  const started = Date.now()
+  const result = await selectWorkingManifest(['https://hang.ysp.cctv.cn/live.m3u8', 'https://good.ysp.cctv.cn/live.m3u8'], { fetchImpl, timeoutMs: 50 })
+  assert.equal(result.sourceUrl, 'https://good.ysp.cctv.cn/live.m3u8')
+  assert.ok(Date.now() - started < 1000)
+  await selectWorkingManifest(['https://hang.ysp.cctv.cn/live.m3u8'], { fetchImpl, timeoutMs: 50 }).then(
+    () => { throw new Error('全部挂住不应成功') },
+    error => { assert.match(error.message, /超时/); assert.equal(error.allForbidden, false, '超时不算限流') },
+  )
+})
+
 await checkAsync('清单能取回但没有分片条目的 CDN 视为不可用', () => selectWorkingManifest(
   ['https://empty.ysp.cctv.cn/live.m3u8'],
   { fetchImpl: async () => new Response('#EXTM3U\n#EXT-X-ENDLIST\n', { status: 200 }) },
@@ -827,6 +843,93 @@ check('分片地址固定：相对地址补全、文件名变了用新地址、�
   assert.deepEqual([...pins.keys()], [5 + PIN_MARGIN + 10], '窗口远去后旧序号剪掉')
   pinSegmentUrls(one(1, 'https://b.ysp.cctv.cn/t/s3-1.ts'), base, pins)
   assert.deepEqual([...pins.keys()], [1], '序号重置后不留高位旧记录')
+})
+
+check('libVLC 视图：整片后面跟垫片、最后一项是垫片、刷新间隔最多 5 秒、声明时长总和不变', () => {
+  const upstream = (seq, td, durations) => [
+    '#EXTM3U', '#EXT-X-VERSION:3', `#EXT-X-MEDIA-SEQUENCE:${seq}`, `#EXT-X-TARGETDURATION:${td}`,
+    ...durations.flatMap((duration, i) => [
+      '#EXT-QQHLS-MACHINEID:11111', `#EXT-X-PROGRAM-DATE-TIME:2026-09-27T15:28:0${i}+08:00`,
+      `#EXTINF:${duration.toFixed(3)},`, `https://a.ysp.cctv.cn/T/2024078203-${seq + i}.ts`,
+    ]),
+  ].join('\n') + '\n'
+  const pad = 'http://192.168.1.2:1905/ysp-pad.ts'
+  const entries = text => {
+    const lines = text.trim().split('\n')
+    const first = Number(text.match(/#EXT-X-MEDIA-SEQUENCE:(\d+)/)[1])
+    return lines.flatMap((line, i) => line.startsWith('#') ? [] : [{ url: line, duration: Number(lines[i - 1].slice(8, -1)) }])
+      .map((entry, i) => ({ ...entry, index: first + i }))
+  }
+  const text = libvlcPlaylist(upstream(100, 9, [8.88, 4.2, 5]), pad)
+  assert.match(text, /^#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-MEDIA-SEQUENCE:198\n#EXT-X-TARGETDURATION:5\n/)
+  assert.equal(/PROGRAM-DATE-TIME|QQHLS/.test(text), false, '上游的附加标签不带过去')
+  const list = entries(text)
+  assert.deepEqual(list.map(entry => entry.url === pad ? 'pad' : entry.url.match(/-(\d+)\.ts/)[1]),
+    ['pad', 'pad', '100', 'pad', '101', 'pad', '102', 'pad'])
+  assert.deepEqual(list.filter(entry => entry.url !== pad).map(entry => entry.index), [200, 202, 204], '第 n 片固定排在 2n')
+  // TS 上声明时长不准会让 libVLC 在分片边界重新对时间线，所以整片 + 垫片必须正好等于上游时长
+  const real = list.slice(2)
+  assert.equal(Number(real.reduce((sum, entry) => sum + entry.duration, 0).toFixed(3)), 18.08)
+  assert.deepEqual(real.filter(entry => entry.url !== pad).map(entry => entry.duration), [8.87, 4.19, 4.99])
+
+  // 窗口往前滚一片：已经下发过的片序号不变，新片接在后面
+  const next = entries(libvlcPlaylist(upstream(101, 5, [4.2, 5, 5]), pad))
+  assert.deepEqual(next.filter(entry => entry.url !== pad).map(entry => entry.index), [202, 204, 206])
+  assert.equal(next.at(-1).url, pad)
+  assert.equal(next.at(-1).index, 207)
+  assert.match(libvlcPlaylist(upstream(101, 5, [4.2, 5, 5]), pad), /#EXT-X-TARGETDURATION:5\n/)
+  assert.match(libvlcPlaylist(upstream(101, 4, [4, 4, 4]), pad), /#EXT-X-TARGETDURATION:4\n/, '上游更短时不改')
+})
+
+check('libVLC 视图：改写不了的清单回 null，调用方下发原样', () => {
+  const pad = 'http://h/ysp-pad.ts'
+  const base = '#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:7\n#EXT-X-TARGETDURATION:5\n'
+  assert.equal(libvlcPlaylist(`${base}#EXTINF:5,\nhttps://a.ysp.cctv.cn/T/s-7.ts\n`, ''), null, '没有垫片地址')
+  assert.equal(libvlcPlaylist(base, pad), null, '没有分片')
+  assert.equal(libvlcPlaylist(`${base}#EXTINF:5,\nhttps://a.ysp.cctv.cn/T/s-7.m4s\n`, pad), null, '不是 TS')
+  assert.equal(libvlcPlaylist(`${base}#EXT-X-KEY:METHOD=AES-128,URI="k"\n#EXTINF:5,\nhttps://a.ysp.cctv.cn/T/s-7.ts\n`, pad), null, '加密')
+  assert.equal(libvlcPlaylist(`${base}#EXTINF:5,\nhttps://a.ysp.cctv.cn/T/s-7.ts\n#EXT-X-DISCONTINUITY\n#EXTINF:5,\nhttps://a.ysp.cctv.cn/T/s-8.ts\n`, pad), null, '有断点')
+  assert.equal(libvlcPlaylist('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nmedia.m3u8\n', pad), null, '主清单')
+  assert.equal(libvlcPlaylist('#EXTM3U\n#EXT-X-TARGETDURATION:5\n#EXTINF:5,\nhttps://a.ysp.cctv.cn/T/s-7.ts\n', pad), null, '没有序号')
+  assert.match(libvlcPlaylist(`${base}#EXTINF:5,\r\nhttps://a.ysp.cctv.cn/T/s-7.ts?x=1\r\n`, pad), /s-7\.ts\?x=1\n#EXTINF:0\.010,\nhttp:\/\/h\/ysp-pad\.ts\n$/, '行尾 \\r 归一、带参数的地址照认')
+})
+
+await checkAsync('libVLC 视图只给 VLC 内核且外壳给了本机地址时才换，其他情况下发原样', async () => {
+  const text = '#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:100\n#EXT-X-TARGETDURATION:8\n#EXTINF:7.440,\nhttps://a.ysp.cctv.cn/T/2024078203-100.ts\n'
+  const resolver = createResolver({
+    request: async () => ({ urls: ['https://a.ysp.cctv.cn/T/live.m3u8'] }),
+    select: async () => ({ url: 'https://a.ysp.cctv.cn/T/live.m3u8', text }),
+  })
+  const vlc = { ua: 'VLC/4.0.0-dev LibVLC/4.0.0-dev' }
+  const viewed = await resolver.resolve('ysp-cctv1', { now: 0, client: vlc, selfBase: 'http://192.168.1.2:1905/pass' })
+  assert.match(viewed.manifestText, /#EXTINF:7\.430,\nhttps:\/\/a\.ysp\.cctv\.cn\/T\/2024078203-100\.ts\n#EXTINF:0\.010,\nhttp:\/\/192\.168\.1\.2:1905\/pass\/ysp-pad\.ts\n$/)
+  for (const ctx of [
+    { client: vlc },
+    { client: { ua: 'AppleCoreMedia/1.0.0.23A344 (Apple TV; U; CPU OS 27_0 like Mac OS X; zh_cn)' }, selfBase: 'http://h' },
+    { client: { ua: 'Lavf/61.7.100' }, selfBase: 'http://h' },
+    { selfBase: 'http://h' },
+    {},
+  ]) {
+    const plain = await resolver.resolve('ysp-cctv1', { now: 5000, ...ctx })
+    assert.equal(plain.manifestText, text)
+  }
+})
+
+await checkAsync('垫片是 200 个 TS 空包，本机路由认领并直接返回', async () => {
+  assert.equal(FILLER_BODY.length, 188 * 200)
+  for (let at = 0; at < FILLER_BODY.length; at += 188) {
+    assert.equal(FILLER_BODY.readUInt32BE(at), 0x471fff10, '同步字节 + PID 0x1FFF + 只有负载')
+  }
+  assert.equal(claimsLocalPath(FILLER_PATH), true)
+  assert.equal(claimsLocalPath('/ysp-pad.tsx'), false)
+  const got = await handleLocalRequest({ path: FILLER_PATH, method: 'GET' })
+  assert.equal(got.status, 200)
+  assert.equal(got.headers['Content-Type'], 'video/mp2t')
+  assert.equal(got.headers['Content-Length'], FILLER_BODY.length)
+  assert.equal(got.body, FILLER_BODY)
+  const head = await handleLocalRequest({ path: FILLER_PATH, method: 'HEAD' })
+  assert.equal(head.status, 200)
+  assert.equal(head.body, '')
 })
 
 await checkAsync('解析失败也绝不抛异常，只回空 url 与原因', async () => {

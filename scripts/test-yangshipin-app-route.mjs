@@ -164,6 +164,59 @@ try {
     assert.match(proxied.body.toString(), new RegExp(`/${PASS}/ysp-vip/${channel.id}/video\\.m3u8`))
   })
 
+  await check('公开频道清单直出：libVLC 拿到带垫片的清单，垫片地址带访问前缀且取得到；其他播放器和全代理照旧', async () => {
+    const realFetch = globalThis.fetch
+    const upstream = [
+      '#EXTM3U', '#EXT-X-VERSION:3', '#EXT-X-MEDIA-SEQUENCE:500', '#EXT-X-TARGETDURATION:9',
+      '#EXTINF:8.880,', 'https://hlslive-tx-cdn.ysp.cctv.cn/TOKEN/2024078203-500.ts',
+      '#EXTINF:4.200,', 'https://hlslive-tx-cdn.ysp.cctv.cn/TOKEN/2024078203-501.ts',
+      '#EXTINF:5.000,', 'https://hlslive-tx-cdn.ysp.cctv.cn/TOKEN/2024078203-502.ts',
+    ].join('\n') + '\n'
+    globalThis.fetch = async url => String(url).startsWith('https://bkliveinfo.ysp.cctv.cn/')
+      ? Response.json({ iretcode: 0, playurl: 'https://hlslive-tx-cdn.ysp.cctv.cn/TOKEN/2024078203.m3u8' })
+      : new Response(upstream, { status: 200 })
+    try {
+      const vlc = { 'User-Agent': 'VLC/4.0.0-dev LibVLC/4.0.0-dev' }
+      const viaPass = await request(`/${PASS}/relay/ysp-cctv2.m3u8`, { headers: vlc })
+      assert.equal(viaPass.status, 200)
+      const text = viaPass.body.toString()
+      const filler = `http://127.0.0.1:${PORT}/${PASS}/ysp-pad.ts`
+      assert.equal(text.split('\n').filter(line => line === filler).length, 5, '头上两个 + 每片后面一个')
+      assert.ok(text.trimEnd().endsWith(filler), '清单最后一项是垫片')
+      assert.match(text, /#EXT-X-MEDIA-SEQUENCE:998\n/)
+      assert.match(text, /#EXT-X-TARGETDURATION:5\n/)
+      assert.match(text, /#EXTINF:8\.870,\nhttps:\/\/hlslive-tx-cdn\.ysp\.cctv\.cn\/TOKEN\/2024078203-500\.ts\n/)
+
+      const viaToken = await request(`/u/${USER_TOKEN}/relay/ysp-cctv2.m3u8`, { headers: vlc })
+      assert.ok(viaToken.body.toString().includes(`http://127.0.0.1:${PORT}/u/${USER_TOKEN}/ysp-pad.ts`))
+      const behindProxy = await request(`/${PASS}/relay/ysp-cctv2.m3u8`, {
+        headers: { ...vlc, 'X-Forwarded-Host': 'tv.example.com', 'X-Forwarded-Proto': 'https' },
+      })
+      assert.ok(behindProxy.body.toString().includes(`https://tv.example.com/${PASS}/ysp-pad.ts`))
+
+      for (const path of [`/${PASS}/ysp-pad.ts`, `/u/${USER_TOKEN}/ysp-pad.ts`]) {
+        const pad = await request(path, { headers: vlc })
+        assert.equal(pad.status, 200)
+        assert.equal(pad.headers['content-type'], 'video/mp2t')
+        assert.equal(pad.body.length, 188 * 200)
+      }
+      const head = await request(`/${PASS}/ysp-pad.ts`, { method: 'HEAD', headers: vlc })
+      assert.equal(head.status, 200)
+      assert.equal(head.body.length, 0)
+      const noPass = await request('/ysp-pad.ts', { headers: vlc })
+      assert.notEqual(noPass.status, 200, '没带访问前缀不给')
+
+      const other = await request(`/${PASS}/relay/ysp-cctv2.m3u8`, { headers: { 'User-Agent': 'AppleCoreMedia/1.0.0' } })
+      assert.equal(other.body.toString().includes('ysp-pad'), false, '其他播放器拿原样清单')
+      assert.match(other.body.toString(), /#EXT-X-TARGETDURATION:9\n/)
+      const proxied = await request(`/${PASS}/proxy/ysp-cctv2.m3u8`, { headers: vlc })
+      assert.equal(proxied.status, 200)
+      assert.equal(proxied.body.toString().includes('ysp-pad'), false, '全代理不换视图')
+    } finally {
+      globalThis.fetch = realFetch
+    }
+  })
+
   await check('/u token + relay master 与子清单都保留用户令牌前缀', async () => {
     const master = await request(`/u/${USER_TOKEN}/relay/ysp-vip-cctvfyzq.m3u8?session=user`)
     assert.equal(master.status, 200)

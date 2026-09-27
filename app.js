@@ -55,7 +55,18 @@ function logOncePer(key, ms) {
 function clientOf(req) {
   const ip = (req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || '?').replace(/^::ffff:/, '')
   const ua = String(req.headers['user-agent'] || '无UA').replace(/[\r\n]/g, ' ')
-  return { ip, key: `${ip}|${ua.slice(0, 120)}`, tag: `${ip} UA:${ua.slice(0, 80)}` }
+  return { ip, ua, key: `${ip}|${ua.slice(0, 120)}`, tag: `${ip} UA:${ua.slice(0, 80)}` }
+}
+
+// 这位客户端访问本实例用的来源（协议 + 主机）：经反代时取转发头，否则取 Host。
+// 写进下发给它自己的清单里，格式不对就回空串，调用方当作没有。
+function originOf(req) {
+  const forwardedHost = req.headers['x-forwarded-host']?.split(',')[0]?.trim()
+  const host = forwardedHost || String(req.headers.host || '')
+  if (!/^[a-z0-9.\-_:[\]]{1,255}$/i.test(host)) return ''
+  const forwardedProto = req.headers['x-forwarded-proto']?.split(',')[0]?.trim().toLowerCase()
+  const proto = ['http', 'https'].includes(forwardedProto) ? forwardedProto : (forwardedHost ? 'https' : 'http')
+  return `${proto}://${host}`
 }
 
 /**
@@ -1294,7 +1305,11 @@ async function handleRequest(req, res) {
 
   // 频道（relayMode = 清单直出兼容模式，issue #98：极影视等播放器不跟随 302 跳转；
   // relay 段已在「/userId/token」解析前剥离，此处 routeUrl 即普通频道地址）
-  const result = await channel(routeUrl, urlUserId, urlToken, clientOf(req))
+  // selfBase 只在清单直出时给：全代理会把清单里的地址全部改成经本机转发，模块不该再引用本机地址
+  const origin = relayMode ? originOf(req) : ''
+  const result = await channel(routeUrl, urlUserId, urlToken, clientOf(req), {
+    selfBase: origin ? `${origin}${accessPrefix}` : '',
+  })
 
   // 结果异常
   if (result.code != 302) {

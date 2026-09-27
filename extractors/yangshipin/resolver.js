@@ -1,5 +1,6 @@
 import { CHANNEL_BY_REF } from './channels.js'
 import { requestPlayUrls, selectWorkingManifest, UPSTREAM_HEADERS } from './api.js'
+import { FILLER_PATH, LIBVLC_UA, libvlcPlaylist } from './libvlc-view.js'
 
 /**
  * 只缓存官方主备入口，绝不把清单正文按取票 TTL 缓存。
@@ -131,10 +132,14 @@ export function createResolver({ request = requestPlayUrls, select = selectWorki
     try {
       const manifest = await acquire(key, channel, ctx)
       if (!pins.has(key)) pins.set(key, new Map())
+      const text = pinSegmentUrls(manifest.text, manifest.url, pins.get(key))
+      // libVLC 另拿一份清单视图（见 libvlc-view.js）。垫片由本机提供，所以只在外壳给了
+      // selfBase（清单直出）时才换；改写不了的清单 libvlcPlaylist 回 null，照旧下发原样。
+      const forLibvlc = ctx.selfBase && LIBVLC_UA.test(String(ctx.client?.ua || ''))
       // 只返回本次请求刚取回的正文；缓存条目里没有正文，下次轮询会重新拉取。
       return {
         url: manifest.url,
-        manifestText: pinSegmentUrls(manifest.text, manifest.url, pins.get(key)),
+        manifestText: (forLibvlc && libvlcPlaylist(text, `${ctx.selfBase}${FILLER_PATH}`)) || text,
         manifestUrl: manifest.url,
         upstreamHeaders: UPSTREAM_HEADERS,
         desc: `${channel.name} H.264 播放地址获取成功`,
