@@ -27,10 +27,50 @@ export const CACHE_MS = 5 * 60 * 1000
  */
 export const FORBIDDEN_COOLDOWN_MS = 30 * 1000
 
+/**
+ * 同一媒体序号只下发第一次见到的分片地址（issue #142 / #143）。
+ *
+ * 同一入口短间隔重取清单官方会回 403，这里随即换备用入口；换票也会换主机和路径令牌。
+ * 于是相邻两次刷新里同一序号的分片地址常常不同（实测 2.5 秒一刷，一个序号先后出现
+ * 5 个主机）。各节点同序号分片字节完全一致，但 hls.js 1.6+（levelParsingError）和
+ * AVPlayer（-12312 Media Entry URL not match previous playlist）都逐片比对新旧清单，
+ * 对不上就不再接纳新清单：约 10 秒后卡住，几次之后整条报错停播。实测同一实例同一台，
+ * AVPlayer 原样下发 4 分钟卡 5 次后停播，固定地址后零卡顿。
+ *
+ * 只在文件名相同时沿用旧地址（文件名是「流 ID-序号」），文件名变了说明换了一路流，
+ * 以新地址为准。旧地址照样能取：令牌 4 小时有效，窗口内的分片各节点都在。
+ * 当前窗口前后 PIN_MARGIN 个序号以外的记录随即剪掉，序号重置也不会串到旧地址。
+ */
+export const PIN_MARGIN = 30
+
+const fileName = url => new URL(url).pathname.split('/').pop()
+
+export function pinSegmentUrls(text, baseUrl, pins) {
+  const body = String(text).replace(/\r/g, '')
+  const first = Number(body.match(/^#EXT-X-MEDIA-SEQUENCE:\s*(\d+)/m)?.[1] || 0)
+  let seq = first
+  const pinned = body.split('\n').map(line => {
+    const value = line.trim()
+    if (!value || value.startsWith('#')) return line
+    const current = seq++
+    let url
+    try { url = new URL(value, baseUrl).href } catch { return line }
+    const previous = pins.get(current)
+    if (previous && fileName(previous) === fileName(url)) return previous
+    pins.set(current, url)
+    return url
+  })
+  for (const key of pins.keys()) {
+    if (key < first - PIN_MARGIN || key >= seq + PIN_MARGIN) pins.delete(key)
+  }
+  return pinned.join('\n')
+}
+
 export function createResolver({ request = requestPlayUrls, select = selectWorkingManifest } = {}) {
   const cache = new Map()
   const pending = new Map()
   const cooling = new Map()
+  const pins = new Map()
 
   function remember(ref, urls, manifest, expiresAt) {
     // 保存取票接口给的入口；CDN 重定向后的临时媒体地址可能很快失效，不能
@@ -90,10 +130,11 @@ export function createResolver({ request = requestPlayUrls, select = selectWorki
     cooling.delete(key)
     try {
       const manifest = await acquire(key, channel, ctx)
+      if (!pins.has(key)) pins.set(key, new Map())
       // 只返回本次请求刚取回的正文；缓存条目里没有正文，下次轮询会重新拉取。
       return {
         url: manifest.url,
-        manifestText: manifest.text,
+        manifestText: pinSegmentUrls(manifest.text, manifest.url, pins.get(key)),
         manifestUrl: manifest.url,
         upstreamHeaders: UPSTREAM_HEADERS,
         desc: `${channel.name} H.264 播放地址获取成功`,
@@ -113,9 +154,10 @@ export function createResolver({ request = requestPlayUrls, select = selectWorki
     cache.clear()
     pending.clear()
     cooling.clear()
+    pins.clear()
   }
 
-  return { resolve, clear, cache, pending, cooling }
+  return { resolve, clear, cache, pending, cooling, pins }
 }
 
 const resolver = createResolver()

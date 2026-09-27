@@ -11,7 +11,7 @@ import {
 } from '../extractors/yangshipin/channels.js'
 import { createCKey } from '../extractors/yangshipin/ckey.js'
 import { isOfficialMediaUrl, requestPlayUrls, selectWorkingManifest } from '../extractors/yangshipin/api.js'
-import { CACHE_MS, createResolver } from '../extractors/yangshipin/resolver.js'
+import { CACHE_MS, PIN_MARGIN, createResolver, pinSegmentUrls } from '../extractors/yangshipin/resolver.js'
 import {
   LOGIN_IDENTITY_COOKIES,
   YspBrowserLogin,
@@ -782,6 +782,51 @@ await checkAsync('CCTV1 切换 CCTV2 时两台缓存独立，切回也读取最�
     assert.match(result.manifestText, new RegExp(`part-${i + 1}\\.ts`))
   }
   assert.deepEqual(requests, ['cctv1', 'cctv2'])
+})
+
+await checkAsync('同一序号换了主机或令牌仍下发第一次的地址，新序号才用新地址（issue #142 / #143）', async () => {
+  // hls.js 与 AVPlayer 都逐片比对新旧清单，同一序号地址变了就不再接纳新清单，十几秒后卡住
+  const playlist = (seq, host, token) => [
+    '#EXTM3U', '#EXT-X-VERSION:3', `#EXT-X-MEDIA-SEQUENCE:${seq}`, '#EXT-X-TARGETDURATION:5',
+    ...[0, 1, 2].flatMap(i => ['#EXTINF:5.000,', `https://${host}.ysp.cctv.cn/${token}/2024078203-${seq + i}.ts`]),
+  ].join('\n') + '\n'
+  const bodies = {
+    'ysp-cctv1': [playlist(100, 'hlslive-tx-3-cdn', 'T1'), playlist(101, 'bktlivecloud-cdn', 'T1'), playlist(102, 'live-dtocnc-cdn', 'T2')],
+    'ysp-cctv2': [playlist(101, 'hlslive-tx-5-cdn', 'T9')],
+  }
+  let ref = 'ysp-cctv1'
+  const resolver = createResolver({
+    request: async () => ({ urls: ['https://entry.ysp.cctv.cn/live.m3u8'] }),
+    select: async () => ({ url: 'https://entry.ysp.cctv.cn/live.m3u8', text: bodies[ref].shift() }),
+  })
+  const segments = result => result.manifestText.split('\n').filter(line => line && !line.startsWith('#'))
+  const a = segments(await resolver.resolve(ref, { now: 0 }))
+  const b = segments(await resolver.resolve(ref, { now: 5000 }))
+  const c = segments(await resolver.resolve(ref, { now: 10000 }))
+  assert.deepEqual(b.slice(0, 2), a.slice(1), '换主机后已下发过的序号地址不变')
+  assert.equal(b[2], 'https://bktlivecloud-cdn.ysp.cctv.cn/T1/2024078203-103.ts')
+  assert.deepEqual(c.slice(0, 2), b.slice(1), '换票（令牌变了）后同样沿用')
+  assert.equal(c[2], 'https://live-dtocnc-cdn.ysp.cctv.cn/T2/2024078203-104.ts')
+  ref = 'ysp-cctv2'
+  const other = segments(await resolver.resolve(ref, { now: 15000 }))
+  assert.equal(other[0], 'https://hlslive-tx-5-cdn.ysp.cctv.cn/T9/2024078203-101.ts', '各频道分开记，不串台')
+  resolver.clear()
+  assert.equal(resolver.pins.size, 0)
+})
+
+check('分片地址固定：相对地址补全、文件名变了用新地址、窗口外记录剪掉', () => {
+  const base = 'https://a.ysp.cctv.cn/tok/live.m3u8'
+  const one = (seq, uri) => `#EXTM3U\r\n#EXT-X-MEDIA-SEQUENCE:${seq}\r\n#EXTINF:5,\r\n${uri}\r\n`
+  assert.equal(pinSegmentUrls(one(7, 'seg-7.ts'), base, new Map()),
+    '#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:7\n#EXTINF:5,\nhttps://a.ysp.cctv.cn/tok/seg-7.ts\n')
+  const pins = new Map()
+  pinSegmentUrls(one(5, 'https://a.ysp.cctv.cn/t/s1-5.ts'), base, pins)
+  assert.match(pinSegmentUrls(one(5, 'https://b.ysp.cctv.cn/t/s1-5.ts'), base, pins), /\/\/a\.ysp\.cctv\.cn\/t\/s1-5\.ts/)
+  assert.match(pinSegmentUrls(one(5, 'https://b.ysp.cctv.cn/t/s2-5.ts'), base, pins), /\/\/b\.ysp\.cctv\.cn\/t\/s2-5\.ts/, '换了一路流以新地址为准')
+  pinSegmentUrls(one(5 + PIN_MARGIN + 10, 'https://b.ysp.cctv.cn/t/s2-45.ts'), base, pins)
+  assert.deepEqual([...pins.keys()], [5 + PIN_MARGIN + 10], '窗口远去后旧序号剪掉')
+  pinSegmentUrls(one(1, 'https://b.ysp.cctv.cn/t/s3-1.ts'), base, pins)
+  assert.deepEqual([...pins.keys()], [1], '序号重置后不留高位旧记录')
 })
 
 await checkAsync('解析失败也绝不抛异常，只回空 url 与原因', async () => {
