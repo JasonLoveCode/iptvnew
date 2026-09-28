@@ -871,6 +871,14 @@
             line-height: 1;
         }
 
+        .source-card-add small {
+            font-size: 11px;
+            font-weight: 400;
+            color: #8c8c8c;
+            text-align: center;
+            padding: 0 10px;
+        }
+
         .source-badge {
             display: inline-block;
             padding: 1px 6px;
@@ -3642,7 +3650,8 @@
                             <div style="background: #f6ffed; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
                                 <strong style="color: #52c41a;">👤 自定义源配置</strong>
                                 <ol style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; color: #666; line-height: 1.8;">
-                                    <li>点击"添加自定义源"选择模式：<strong>抓取模式</strong>或<strong>直连模式</strong></li>
+                                    <li>点击"添加自定义源"选择模式：<strong>直连模式</strong>、<strong>抓取模式</strong>或<strong>订阅模式</strong></li>
+                                    <li>想加回港澳台等网络第三方频道：点「🌏 添加「来源于网络」列表」，再点"导入并保存"</li>
                                     <li><strong>抓取模式</strong>：填写频道名、分组和网页地址，点击"抓取并保存"</li>
                                     <li><strong>直连模式</strong>：填写频道名、分组和m3u8链接，点击"保存"</li>
                                     <li>可编辑、删除、启用/禁用</li>
@@ -6154,6 +6163,16 @@
             addCard.innerHTML = '<span class="plus">＋</span><span>添加自定义源</span>';
             externalSourceList.insertBefore(addCard, externalSourceList.firstChild);
 
+            // 「来源于网络」快捷入口：还没订阅过才显示；订阅过（含刚填好未保存的）它就是一张普通卡片。
+            if (findFromTheWebSource() === -1) {
+                const ftwCard = document.createElement('div');
+                ftwCard.className = 'source-card-add';
+                ftwCard.title = '一键填好仓库 from-the-web 列表的订阅地址，再点「导入并保存」即可';
+                ftwCard.onclick = () => addFromTheWebSource();
+                ftwCard.innerHTML = '<span class="plus">🌏</span><span>添加「来源于网络」列表</span><small>港澳台、新马、影视等网络第三方频道</small>';
+                addCard.after(ftwCard);
+            }
+
             // 详情只在有选中项时展开。**不再「默认选中第一个」**，避免一进入分类
             // 就被长表单占满，先让用户看清源列表再决定编辑哪一项。
             // 选中项指向已隐藏的内置订阅时收起：遗留状态（老版本存下来的下标、
@@ -6625,6 +6644,11 @@
                             ${!source.localImport ? `
                             <input type="text" value="${source.subscriptionUrl || ''}" oninput="updateExternalField(${index}, 'subscriptionUrl', this.value)" placeholder="例：https://example.com/playlist.m3u 或 .txt">
                             <div class="form-hint">填写包含多个频道的 m3u/m3u8 或 txt（频道名,地址）播放列表地址，系统会自动识别格式并解析其中的所有频道</div>
+                            ${isFromTheWebUrl(source.subscriptionUrl) ? `
+                            <div style="margin-top:8px;padding:8px 10px;background:#fffbe6;border:1px solid #ffe58f;border-radius:4px;font-size:12px;color:#8c6d1f;line-height:1.6;">
+                                🌏 这是仓库 from-the-web 里的<strong>网络第三方转发源</strong>，不是电视台官方地址：国内直连大多播不了，需要海外网络或路由器全局代理；本项目不维护，失效不作为 bug 处理。不想要了删掉这条订阅即可。<a href="${FROM_THE_WEB_README}" target="_blank" rel="noopener">收录范围 ↗</a>
+                            </div>` : (!isSaved && findFromTheWebSource(index) === -1 ? `
+                            <div class="form-hint">想加回以前精选列表里的港澳台、新马、影视等网络第三方频道？<a href="javascript:void(0)" onclick="fillFromTheWeb(${index})">一键填入「来源于网络」列表</a></div>` : '')}
                             ` : `
                             <input type="file" accept=".m3u,.m3u8,.txt,text/plain" onchange="onLocalFilePicked(${index}, this)" style="margin-bottom: 8px;">
                             <textarea oninput="updateExternalField(${index}, 'subscriptionContent', this.value)" placeholder="选择本地 .m3u/.m3u8/.txt 文件，或直接把播放列表内容粘贴到这里（支持 m3u/m3u8 与 txt「频道名,地址」格式，自动识别 GBK/UTF-8 编码）" style="width: 100%; min-height: 120px; font-family: monospace; font-size: 12px; box-sizing: border-box;">${(source.subscriptionContent || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')}</textarea>
@@ -6784,6 +6808,59 @@
             // 插入到数组开头，让新增的源显示在最上面
             externalConfig.sources.unshift(newSource);
             selectedExternalIndex = 0;
+            renderExternalSources();
+        }
+
+        // 「来源于网络」列表（issue #121）：清出精选列表的第三方转发源放在仓库 from-the-web/，
+        // 镜像不带这个目录，只能订阅 GitHub 直链。公告里的教程是视频，地址没法复制，这里给一键填入。
+        const FROM_THE_WEB_URL = 'https://raw.githubusercontent.com/akiralereal/iptv/main/from-the-web/from-the-web.m3u';
+        const FROM_THE_WEB_README = 'https://github.com/akiralereal/iptv/tree/main/from-the-web';
+
+        function isFromTheWebUrl(url) {
+            return /\/from-the-web\/from-the-web\.m3u(\?|#|$)/.test(String(url || '').trim());
+        }
+
+        function findFromTheWebSource(exceptIndex = -1) {
+            return externalConfig.sources.findIndex((source, index) => index !== exceptIndex
+                && source && source.mode === 'subscription' && isFromTheWebUrl(source.subscriptionUrl));
+        }
+
+        function addFromTheWebSource() {
+            const existing = findFromTheWebSource();
+            if (existing !== -1) {
+                selectExternalSource(existing);
+                return;
+            }
+            externalConfig.sources.unshift({
+                name: '来源于网络',
+                group: '未分组',
+                enabled: true,
+                mode: 'subscription',
+                subscriptionUrl: FROM_THE_WEB_URL,
+                webUrl: '',
+                m3u8Url: '',
+                autoRefresh: true,
+                refreshInterval: 1440,
+                updateOnStartup: true,
+            });
+            selectedExternalIndex = 0;
+            setSaveDirty('ext');
+            renderExternalSources();
+            const wrap = document.getElementById('externalDetailWrap');
+            if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // 走「＋ 添加自定义源 → 订阅模式」老路径（教程视频演示的就是这条）的人，在地址框下直接填入
+        function fillFromTheWeb(index) {
+            const source = externalConfig.sources[index];
+            if (!source) return;
+            if (findFromTheWebSource(index) !== -1) {
+                showStatus('已经添加过「来源于网络」列表，不用再加一次', 'info');
+                return;
+            }
+            source.subscriptionUrl = FROM_THE_WEB_URL;
+            if (!source.name || !source.name.trim()) source.name = '来源于网络';
+            setSaveDirty('ext');
             renderExternalSources();
         }
 
