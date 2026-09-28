@@ -164,6 +164,7 @@ import nmtv from './nmtv/index.js'
 import qtv from './qtv/index.js'
 import qinghai from './qinghai/index.js'
 import quanzhouMinnan from './quanzhou-minnan/index.js'
+import quanzhouCounty from './quanzhou-county/index.js'
 import shanxi from './shanxi/index.js'
 import shaanxi from './shaanxi/index.js'
 import songjiang from './songjiang/index.js'
@@ -203,6 +204,7 @@ const MODULES = [
   gxtv,
   fjtv,
   quanzhouMinnan,
+  quanzhouCounty,
   jlntv,
   jxntv,
   hebtv,
