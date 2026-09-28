@@ -1938,6 +1938,15 @@
    "updated": "2026-09-25",
    "width": 256
   },
+  "泉州新闻综合": {
+   "file": "泉州新闻综合.png",
+   "hash": "140a44775f",
+   "height": 106,
+   "origin": "quanzhou-minnan",
+   "source": "https://www.qztv.cn/index/images/home/crad-01.jpg",
+   "updated": "2026-09-28",
+   "width": 256
+  },
   "赛事最经典": {
    "file": "赛事最经典.png",
    "hash": "3808b1f84e",
@@ -4186,6 +4195,7 @@
   "quanzhou-county/#晋江电视台": "晋江电视台",
   "quanzhou-county/#石狮新闻综合": "石狮新闻综合",
   "quanzhou-minnan/quanzhou-minnan-tv": "泉州闽南语",
+  "quanzhou-minnan/quanzhou-news-tv": "泉州新闻综合",
   "shaanxi/shaanxi-mobile": "陕西移动电视",
   "shaanxi/shaanxi-news": "陕西新闻资讯频道",
   "shaanxi/shaanxi-nonglin": "农林卫视",
