@@ -5786,8 +5786,18 @@
             const r = await aliasesPost({ action: 'setRule', canonical, aliases: merged });
             if (r.success) {
                 aliasesData = r.data;
+                const { id, isDeleted } = currentChannelDetail;
                 showStatus(`已设别名「${alias}」→「${canonical}」，正在刷新配对状态…`, 'success');
                 try { await loadMyPlaylist(false); } catch (e) { /* 刷新失败不影响别名已保存 */ }
+                // 规范名在现有节目单里（咪咕 / 模块官方）的，重载列表就配上了；
+                // 要从外部 EPG 源补的，得等节目单重新生成，别让用户以为别名没生效。issue #144
+                const matched = myPlaylistOriginalData.some(g => g.channels.some(ch => ch.id === id && ch.epgMatched));
+                if (matched) {
+                    showStatus(`已设别名「${alias}」→「${canonical}」，节目单已配上`, 'success');
+                    if (currentChannelDetail && currentChannelDetail.id === id) showChannelDetail(id, isDeleted);
+                } else {
+                    showStatus(`已设别名「${alias}」→「${canonical}」。节目单来自外部 EPG 源的，到「设置 → EPG 聚合」点「立即刷新并应用」，更新完成后生效`, 'success');
+                }
             } else {
                 showStatus(r.message || '保存别名失败', 'error');
             }
@@ -9880,7 +9890,7 @@ if(success){
                             : ''}
                         ${!channel.epgMatched
                             ? `<div style="margin-top:8px;padding:8px 10px;background:#fffbe6;border:1px solid #ffe58f;border-radius:4px;">
-                                <div style="font-size:12px;color:#8a5a00;margin-bottom:6px;">节目单没匹配上？给它设个<strong>别名</strong>归一到正确的频道名（保存后刷新播放列表生效，不用去配置页）：</div>
+                                <div style="font-size:12px;color:#8a5a00;margin-bottom:6px;">节目单没匹配上？给它设个<strong>别名</strong>归一到正确的频道名（节目单来自外部 EPG 源的，保存后还要到「设置 → EPG 聚合」点一次「立即刷新并应用」）：</div>
                                 <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                                     <span style="font-size:12px;color:#888;flex:0 0 auto;">规范名</span>
                                     <input id="detailAliasCanonical" type="text" placeholder="统一后的频道名，如 CCTV5体育" style="flex:1;min-width:150px;padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
