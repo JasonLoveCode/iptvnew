@@ -2656,6 +2656,51 @@
    "updated": "2026-09-25",
    "width": 256
   },
+  "无锡都市资讯": {
+   "file": "无锡都市资讯.png",
+   "hash": "8fed58184a",
+   "height": 180,
+   "origin": "wuxi",
+   "source": "https://bb-img.wifiwx.com/20220801c22666cd9a348a2b0458f97fdcbbb68e.png",
+   "updated": "2026-09-29",
+   "width": 180
+  },
+  "无锡经济": {
+   "file": "无锡经济.png",
+   "hash": "f76075c4b2",
+   "height": 180,
+   "origin": "wuxi",
+   "source": "https://bb-img.wifiwx.com/202208016797793c42b9f64891b93631e045e9a0.png",
+   "updated": "2026-09-29",
+   "width": 180
+  },
+  "无锡生活": {
+   "file": "无锡生活.png",
+   "hash": "4b6383f01b",
+   "height": 180,
+   "origin": "wuxi",
+   "source": "https://bb-img.wifiwx.com/20220801a6fb8ba6058cf329f6b9cda2c009b7dc.png",
+   "updated": "2026-09-29",
+   "width": 180
+  },
+  "无锡新闻综合": {
+   "file": "无锡新闻综合.png",
+   "hash": "c146b0ee60",
+   "height": 180,
+   "origin": "wuxi",
+   "source": "https://bb-img.wifiwx.com/20220801be428e2d4896146a1521f1d12ba3bc1b.png",
+   "updated": "2026-09-29",
+   "width": 180
+  },
+  "无锡娱乐": {
+   "file": "无锡娱乐.png",
+   "hash": "ae22f96d0b",
+   "height": 180,
+   "origin": "wuxi",
+   "source": "https://bb-img.wifiwx.com/20220801ec0e5017ef5adda908172038a3a477f5.png",
+   "updated": "2026-09-29",
+   "width": 180
+  },
   "五星体育": {
    "file": "五星体育.png",
    "hash": "e3ad090a5d",
@@ -4300,6 +4345,11 @@
   "tianjin/tianjin-news": "天津新闻",
   "tianjin/tianjin-satellite": "天津卫视",
   "tianjin/tianjin-sports": "天津体育",
+  "wuxi/wuxi-city": "无锡都市资讯",
+  "wuxi/wuxi-economy": "无锡经济",
+  "wuxi/wuxi-ent": "无锡娱乐",
+  "wuxi/wuxi-life": "无锡生活",
+  "wuxi/wuxi-news": "无锡新闻综合",
   "xinjiang/xjtv-1": "新疆卫视",
   "xinjiang/xjtv-2": "维吾尔语新闻综合",
   "xinjiang/xjtv-3": "哈萨克语新闻综合",
