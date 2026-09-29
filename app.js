@@ -1252,7 +1252,7 @@ async function handleRequest(req, res) {
     res.writeHead(200, {
       // 清单直出地址按 HLS 类型应答 HEAD 探测：部分播放器播放前先 HEAD 判断类型，
       // 回 application/json 会被判定「不可播放」（issue #98）
-      'Content-Type': streamType === 'flv' ? 'video/x-flv' : (relayMode || proxyMode) ? 'application/vnd.apple.mpegurl' : 'application/json;charset=UTF-8',
+      'Content-Type': (relayMode || proxyMode) ? 'application/vnd.apple.mpegurl' : streamType === 'flv' ? 'video/x-flv' : 'application/json;charset=UTF-8',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, HEAD, OPTIONS',
       'Access-Control-Allow-Headers': '*'

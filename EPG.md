@@ -40,6 +40,7 @@
 | `lotustv` | 澳门莲花卫视 | 已接入 | 1/1 | 2 | www.lotustv.mo/zh/programme | 服务端渲染的 HTML，一页本周一到周日，标签只写日号、没有日期参数；只给开始时间，结束取下一档；周日取不到下周一；节目名繁体照原样 |
 | `asian-live` | 亚洲与国际直播 | 已接入 | YTN、NHK World | 2 | NHK：masterpl.hls.nhkworld.jp/epg/w/{日期}.json；YTN：m.ytn.co.kr/schedule.php | UTC+9，上海的一天对应当地 01:00–次日 01:00；YTN 是网页抓取 |
 | `bilibili-live` | 哔哩哔哩直播 | 不适用 | — | — | — | 直播间 |
+| `douyin-live` | 抖音直播 | 不适用 | — | — | — | 直播间 |
 | `huya-live` | 虎牙直播 | 不适用 | — | — | — | 直播间 |
 | `douyu-live` | 斗鱼直播 | 不适用 | — | — | — | 直播间 |
 | `anhui` | 安徽 | 无官方节目单 | — | — | — | 官网频道页已改跳新闻；安徽视讯 App 1.0.174（2026-09-25 拆包）是爱加密整包壳，桩 dex 13 KB、载荷在 assets/ijiami.dat，不脱壳、到此为止；公开网页端只有微直播活动接口 |

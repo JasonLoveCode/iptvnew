@@ -4683,7 +4683,7 @@
                     <div style="margin-bottom:12px;">
                         <label style="display:block; font-size:12px; color:#888;">刷新间隔（分钟）</label>
                         <input type="number" min="${m.minRefreshMinutes || 1}" max="${m.maxRefreshMinutes || 1440}" id="xf-${escapeHtml(m.id)}-__refresh" oninput="setSaveDirty('xt:${escapeHtml(m.id)}')" value="${m.refreshMinutes}" style="width:140px;">
-                        <div style="font-size:12px; color:#888; margin-top:3px;">允许范围 ${m.minRefreshMinutes || 1}–${m.maxRefreshMinutes || 1440} 分钟，默认 ${m.defaultRefreshMinutes} 分钟。${m.id === 'bilibili-live' ? '只决定多久重新挑一次直播间（热门榜换人、主播下播）；播放地址在播放时实时换取，与此无关。过短容易触发风控。' : ''}</div>
+                        <div style="font-size:12px; color:#888; margin-top:3px;">允许范围 ${m.minRefreshMinutes || 1}–${m.maxRefreshMinutes || 1440} 分钟，默认 ${m.defaultRefreshMinutes} 分钟。${m.id === 'bilibili-live' ? '只决定多久重新挑一次直播间（热门榜换人、主播下播）；播放地址在播放时实时换取，与此无关。过短容易触发风控。' : m.id === 'douyin-live' ? '只决定多久重新选一次房间；播放器刷新订阅不会强制重抓。播放时会获取当前地址。' : ''}</div>
                     </div>`}
                     ${hasEditableConfig ? `<button class="btn btn-sm btn-success" data-save-scope="xt:${escapeHtml(m.id)}" onclick="saveExtractorConfig('${escapeHtml(m.id)}')">💾 保存配置</button>` : ''}
                 </div>`;
