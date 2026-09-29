@@ -174,6 +174,7 @@ import yangshipin from './yangshipin/index.js'
 import xinjiang from './xinjiang/index.js'
 import xizang from './xizang/index.js'
 import wuxi from './wuxi/index.js'
+import yangzhou from './yangzhou/index.js'
 import yunnan from './yunnan/index.js'
 
 // 模块 id 会进 sourceId 并写进 EXTINF 属性值，不消毒就是注入面。
@@ -217,6 +218,7 @@ const MODULES = [
   jiaxing,
   jstv,
   wuxi,
+  yangzhou,
   iqilu,
   sztv,
   meizhouHakka,
