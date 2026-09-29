@@ -2424,6 +2424,72 @@
    "updated": "2026-09-25",
    "width": 255
   },
+  "苏州4K": {
+   "file": "苏州4K.png",
+   "hash": "da4219c880",
+   "height": 66,
+   "kind": "official",
+   "note": "官方没有这个频道（SBS影像长廊）的台标：看苏州 App 4K 页的 indexpic 域名解析不到，页面只有通用「4K」小图标。按规则用所属电视台台标：苏州广电官网页头 headlogo.jpg（360x66 白底 JPG）左侧的 SBS 环标与字母，裁掉右边「苏州广播电视总台」文字。",
+   "origin": "manual",
+   "source": "https://www.csztv.cn/",
+   "updated": "2026-09-29",
+   "width": 191
+  },
+  "苏州电影娱乐": {
+   "file": "苏州电影娱乐.png",
+   "hash": "1cbdc067c6",
+   "height": 100,
+   "kind": "official",
+   "note": "苏州广电官网「节目时间表」页的频道标签图 ds_on_04.png（144x100 透明 PNG），青底白色 SBS 环标加「4」与「电影娱乐」；右侧标签箭头已裁掉，保留 131x100。看苏州 App 频道接口只有 cover 字段（主持人横幅，4 套是 65x50 小图），没有频道台标。",
+   "origin": "manual",
+   "source": "https://www.csztv.cn/dspd/jmsjb/index.shtml",
+   "updated": "2026-09-29",
+   "width": 131
+  },
+  "苏州社会经济": {
+   "file": "苏州社会经济.png",
+   "hash": "41ad56342d",
+   "height": 100,
+   "kind": "official",
+   "note": "苏州广电官网「节目时间表」页的频道标签图 ds_on_02.png（144x100 透明 PNG），青底白色 SBS 环标加「2」与「社会经济」；右侧标签箭头已裁掉，保留 131x100。看苏州 App 频道接口只有 cover 字段（主持人横幅，4 套是 65x50 小图），没有频道台标。",
+   "origin": "manual",
+   "source": "https://www.csztv.cn/dspd/jmsjb/index.shtml",
+   "updated": "2026-09-29",
+   "width": 131
+  },
+  "苏州生活资讯": {
+   "file": "苏州生活资讯.png",
+   "hash": "a626b12a49",
+   "height": 100,
+   "kind": "official",
+   "note": "苏州广电官网「节目时间表」页的频道标签图 ds_on_05.png（144x100 透明 PNG），青底白色 SBS 环标加「5」与「生活资讯」；右侧标签箭头已裁掉，保留 131x100。看苏州 App 频道接口只有 cover 字段（主持人横幅，4 套是 65x50 小图），没有频道台标。",
+   "origin": "manual",
+   "source": "https://www.csztv.cn/dspd/jmsjb/index.shtml",
+   "updated": "2026-09-29",
+   "width": 131
+  },
+  "苏州文化生活": {
+   "file": "苏州文化生活.png",
+   "hash": "eeecc72699",
+   "height": 100,
+   "kind": "official",
+   "note": "苏州广电官网「节目时间表」页的频道标签图 ds_on_03.png（144x100 透明 PNG），青底白色 SBS 环标加「3」与「文化生活」；右侧标签箭头已裁掉，保留 131x100。看苏州 App 频道接口只有 cover 字段（主持人横幅，4 套是 65x50 小图），没有频道台标。",
+   "origin": "manual",
+   "source": "https://www.csztv.cn/dspd/jmsjb/index.shtml",
+   "updated": "2026-09-29",
+   "width": 131
+  },
+  "苏州新闻综合": {
+   "file": "苏州新闻综合.png",
+   "hash": "f7e8043b27",
+   "height": 100,
+   "kind": "official",
+   "note": "苏州广电官网「节目时间表」页的频道标签图 ds_on_01.png（144x100 透明 PNG），青底白色 SBS 环标与「新闻综合」；右侧标签箭头已裁掉，保留 131x100。看苏州 App 频道接口只有 cover 字段（主持人横幅，4 套是 65x50 小图），没有频道台标。",
+   "origin": "manual",
+   "source": "https://www.csztv.cn/dspd/jmsjb/index.shtml",
+   "updated": "2026-09-29",
+   "width": 131
+  },
   "台视高清": {
    "file": "台视高清.png",
    "hash": "b184945fb1",
