@@ -103,3 +103,10 @@ https://live-auth.51kandianshi.com/szgd/csztv5.m3u8
 #EXTINF:-1 group-title="江苏",苏州4K
 https://live-auth.51kandianshi.com/szgd/csztv4k_4k.m3u8
 # === END 苏州广电直连源 ===
+
+# === BEGIN 德化融媒体直连源 ===
+# 说明：德化县融媒体中心官网「瓷都德化新闻网」在线直播页（dehuanews.cn/plus/view-1175-0.html）写死的固定 HLS 地址，不带签名、不看 Referer 与 UA，播放器直连福建广电网络 CDN（2026-09-30 大陆与美国探针实测可播，1080p/25fps 约 3.3M）。
+# 官网没有节目单；台标用融媒体中心站标，收在内置台标库。
+#EXTINF:-1 group-title="福建",德化电视台
+https://play.cmptp.fjgdwl.com/live/63a563ec75764af588f3215b0afa2588.m3u8
+# === END 德化融媒体直连源 ===
