@@ -162,6 +162,7 @@ import migu from './migu/index.js'
 import ningxia from './ningxia/index.js'
 import njtv from './njtv/index.js'
 import nmtv from './nmtv/index.js'
+import putian from './putian/index.js'
 import qtv from './qtv/index.js'
 import qinghai from './qinghai/index.js'
 import quanzhouMinnan from './quanzhou-minnan/index.js'
@@ -209,6 +210,7 @@ const MODULES = [
   fjtv,
   quanzhouMinnan,
   quanzhouCounty,
+  putian,
   jlntv,
   jxntv,
   hebtv,
