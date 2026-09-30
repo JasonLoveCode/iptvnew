@@ -1886,6 +1886,24 @@
    "updated": "2026-09-25",
    "width": 256
   },
+  "宁德文化旅游": {
+   "file": "宁德文化旅游.png",
+   "hash": "ec71264092",
+   "height": 256,
+   "origin": "ningde",
+   "source": "https://app.0593tv.cn/files/jhxt/image/20251027/0bcf044dd729275633f0423ef3bd44e3.jpg",
+   "updated": "2026-09-30",
+   "width": 256
+  },
+  "宁德新闻综合": {
+   "file": "宁德新闻综合.png",
+   "hash": "00f3a674d4",
+   "height": 256,
+   "origin": "ningde",
+   "source": "https://app.0593tv.cn/files/jhxt/image/20251027/13ad1c04e01f9f254ff66ce2e6d42b2f.jpg",
+   "updated": "2026-09-30",
+   "width": 256
+  },
   "宁夏公共": {
    "file": "宁夏公共.png",
    "hash": "47f5617fc2",
@@ -1934,6 +1952,28 @@
    "source": "https://cdnproduce.yntv.cn/ysxw/HDZB_FABU/8805AF7347544A9C8ECCC6789DB4A2C2/702F785952DD4829BB0DB63CE6A8B0EE.png",
    "updated": "2026-09-25",
    "width": 256
+  },
+  "莆田文旅生活": {
+   "file": "莆田文旅生活.png",
+   "hash": "bd652b58e6",
+   "height": 254,
+   "kind": "official",
+   "note": "莆田TV 频道接口里二套的官方频道标（400x400 白底，台标加「莆田二套」）。二套 2024-08 由公共频道更名为文旅生活频道，官方没换新图。图床 image.ptbtv.com 在网宿人机验证后面，浏览器 UA 回 403，本机托管取不到，所以模块里不写、收进内置库",
+   "origin": "manual",
+   "source": "https://mapi.ptbtv.com/api/v1/channel.php（莆田TV 频道接口 channel_id=5 的 logo.square）",
+   "updated": "2026-09-30",
+   "width": 242
+  },
+  "莆田新闻综合": {
+   "file": "莆田新闻综合.png",
+   "hash": "bf420f407f",
+   "height": 185,
+   "kind": "official",
+   "note": "莆田新闻综合官方没有单独的频道台标：莆田TV 频道接口里一套的 logo / snap 是「莆田广播电视台」整台宣传图（900x500），官网直播页只有页头站标。按所属电视台台标的规则，用莆田台台标（台角同款）：从接口里二套的官方频道标（400x400 白底）截取上半部的台标，留白底，深浅界面都看得清。官网页头站标里也是这个标，但只有 85px",
+   "origin": "manual",
+   "source": "https://mapi.ptbtv.com/api/v1/channel.php（莆田TV 频道接口二套 logo.square，截取上半部的莆田台台标）",
+   "updated": "2026-09-30",
+   "width": 179
   },
   "齐鲁频道": {
    "file": "齐鲁频道.png",
@@ -2778,6 +2818,17 @@
    "source": "https://cdn-bt.nmtv.cn/saas/image/2025-05/d712fede-15f3-4168-b01d-5f775521c331.png?sign=1790302896-oam0hacp-0-686960a401fed6a2415a17c7e6bf5de8",
    "updated": "2026-09-25",
    "width": 256
+  },
+  "仙游电视台": {
+   "file": "仙游电视台.png",
+   "hash": "bf420f407f",
+   "height": 185,
+   "kind": "official",
+   "note": "仙游电视台（仙游县融媒体中心）挂在莆田台的平台上播，台角是莆田台台标加「仙游」二字。莆田TV 频道接口里仙游的 logo / snap 是「莆田广播电视台」整台宣传图，官网直播页也没有频道标，按台角用莆田台台标：从接口里二套的官方频道标（400x400 白底）截取上半部，留白底",
+   "origin": "manual",
+   "source": "https://mapi.ptbtv.com/api/v1/channel.php（莆田TV 频道接口二套 logo.square，截取上半部的莆田台台标）",
+   "updated": "2026-09-30",
+   "width": 179
   },
   "香港卫视": {
    "file": "香港卫视.png",
@@ -4330,6 +4381,8 @@
   "mgtv/mgtv-344": "湖南娱乐",
   "mgtv/mgtv-346": "湖南都市",
   "mgtv/mgtv-484": "湖南电视剧",
+  "ningde/#宁德文化旅游": "宁德文化旅游",
+  "ningde/#宁德新闻综合": "宁德新闻综合",
   "ningxia/#宁夏公共": "宁夏公共",
   "ningxia/#宁夏卫视": "宁夏卫视",
   "ningxia/#宁夏文旅": "宁夏文旅",
@@ -4357,6 +4410,9 @@
   "nmtv/nmtv-ulanqab": "乌兰察布",
   "nmtv/nmtv-wuhai": "乌海",
   "nmtv/nmtv-xilingol": "锡林郭勒",
+  "putian/putian-culture": "莆田文旅生活",
+  "putian/putian-news": "莆田新闻综合",
+  "putian/putian-xianyou": "仙游电视台",
   "qinghai/qinghai-amdo": "安多卫视",
   "quanzhou-county/#晋江电视台": "晋江电视台",
   "quanzhou-county/#石狮新闻综合": "石狮新闻综合",
