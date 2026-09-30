@@ -57,6 +57,7 @@
 | `quanzhou-minnan` | 泉州 | 已接入 | 2/2 | 1 | wxqz2.qztv.cn（备 www.qztv.cn、control-center.qztv.cn）新闻综合、闽南语播放页 | 服务端渲染的节目表，完整日期标签给最近七天到今天、没有明天；每档有起止时间，末档结束写次日时刻；三个域名同一源站、各挂一套阿里云 WAF，偶发人机验证，三个都被拦本轮就没有 |
 | `quanzhou-county` | 晋江、石狮 | 已接入 | 1/2 | 2 | 两台官网直播页的云直播接口 cloudlive-manage-mapi/api/topic/program/list（mapi.ijjnews.com、mapi-new.chinashishi.net），app_secret 写在官网页面脚本里 | 与福建省级同一平台，star/end 是 unix 秒；石狮今明两天真编排、07:00 起，偶有全空格标题的空档条目丢掉；晋江天天只有 24 条整点「精彩节目」占位，当官方没发；照样每轮去取，哪天官方真排了就自动有；两台都是直链，按名对上 |
 | `putian` | 莆田 | 已接入 | 2/3 | 2 | mapi.ptbtv.com/api/v1/program.php | 官网直播页与莆田TV App 同款，和厦门同一套 M2O 接口，按 channel_id 与 zone（相对服务器今天的天数）取，不用签名；和取流一样挂在网宿人机验证后面，浏览器 UA 回挑战页，用 Node 自己的 UA；start_time 是 unix 秒、toff 是时长，首尾相接；一套、二套每天 06:00 起真编排，往后排了三四天；仙游电视台天天 24 条整点「精彩节目」占位，当官方没发，照样每轮去取 |
+| `ningde` | 宁德 | 无官方节目单 | — | — | — | 分享页节目单组件调的 Live/getProgram 昨今明三天全是 24 条整点「精彩节目」占位，页面自己也把节目名写死成「精彩节目」；海博地市台同样只有占位；央视网试过 ningde / ningde1 都是 params error |
 | `fjtv` | 福建 | 已接入 | 9 路 | 2 | 省级 mapi-plus.fjtv.net 云直播 program/list；厦门 mapi1.kxm.xmtv.cn/api/v1/program.php；福州 app.zohi.tv/video/player/playbill | 东南卫视、厦视三套、海博地市只有占位；福州只列自办栏目、只有今天，少儿不收 |
 | `jlntv` | 吉林 | 已接入 | 1/15 | 2 | api.cntv.cn/epg/getEpgInfoByChannelNew?c=yanbian | broadcast/programs 只维护广播，电视频道全空；延边卫视取央视网，节目名是朝鲜语（官方原样）；吉林卫视由咪咕 / 央视频覆盖，其余央视网没收 |
 | `jxntv` | 江西 | 无官方节目单 | — | — | — | 官网与今视频 App 后端都没有；App 接口有阿里云 WAF；今视频 6.2.6（2026-09-25 拆包，官网只指向应用宝）是爱加密壳，桩 dex 13 KB，不脱壳、到此为止 |

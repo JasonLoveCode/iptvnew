@@ -159,6 +159,7 @@ import lotustv from './lotustv/index.js'
 import meizhouHakka from './meizhou-hakka/index.js'
 import mgtv from './mgtv/index.js'
 import migu from './migu/index.js'
+import ningde from './ningde/index.js'
 import ningxia from './ningxia/index.js'
 import njtv from './njtv/index.js'
 import nmtv from './nmtv/index.js'
@@ -211,6 +212,7 @@ const MODULES = [
   quanzhouMinnan,
   quanzhouCounty,
   putian,
+  ningde,
   jlntv,
   jxntv,
   hebtv,
