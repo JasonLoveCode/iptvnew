@@ -37,6 +37,17 @@ const DEFAULT_HEADERS = Object.freeze({
   Accept: 'application/json, text/plain, */*',
 })
 
+// 官网目录里省级频道只写「新闻频道」「文化旅游」这类通用名，播放列表里补上「四川」（issue #157），
+// 与其他省模块的写法一致（河南新闻、贵州经济）；外部节目单也按带省名的台名对频道。
+// 四川卫视、四川乡村、康巴卫视本来就能认出是哪台，不在表里的照官网原名。
+const NAME_OVERRIDES = Object.freeze({
+  新闻频道: '四川新闻',
+  经济频道: '四川经济',
+  文化旅游: '四川文化旅游',
+  影视文艺: '四川影视文艺',
+  妇女儿童: '四川妇女儿童',
+})
+
 let catalogCache = null
 let catalogPending = null
 const signedCache = new Map()
@@ -228,7 +239,7 @@ async function cachedChannelList(options = {}) {
 
 export function buildChannels(rows) {
   return (Array.isArray(rows) ? rows : []).map(row => ({
-    name: row.name,
+    name: NAME_OVERRIDES[row.name] || row.name,
     deferredRef: `sichuan-${row.id}`,
     logo: row.logo || '',
     opts: ['network-caching=3000'],

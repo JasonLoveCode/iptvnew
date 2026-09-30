@@ -122,6 +122,13 @@ check('频道目录排除购物并生成稳定的延迟引用', () => {
   assert.equal(claimsRef('sichuan-text'), false)
 })
 
+check('省级通用台名补上「四川」，卫视、乡村照官网原名', () => {
+  const names = ['四川卫视', '新闻频道', '经济频道', '文化旅游', '影视文艺', '妇女儿童', '四川乡村', '康巴卫视', '四川卫视4K超高清SDR']
+  assert.deepEqual(buildChannels(names.map((name, index) => ({ id: String(index + 1), name }))).map(channel => channel.name), [
+    '四川卫视', '四川新闻', '四川经济', '四川文化旅游', '四川影视文艺', '四川妇女儿童', '四川乡村', '康巴卫视', '四川卫视4K超高清SDR',
+  ])
+})
+
 check('频道图标取官网目录 squareImg，相对路径按官网图床补全，缺字段不借下一台', () => {
   assert.equal(SICHUAN_IMAGE_BASE, 'https://kscgc.scgchc.com/')
   assert.equal(officialLogoUrl('/sctv/1/image/a.png'), 'https://kscgc.scgchc.com/sctv/1/image/a.png')
